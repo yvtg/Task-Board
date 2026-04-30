@@ -1,18 +1,16 @@
 import { useState } from "react";
 
-export default function  TaskForm({addTask}: {addTask: (title: string, status: string) => void}) {
+export default function  TaskForm({addTask}: {addTask: (title: string) => void}) {
     const [title, setTitle] = useState("");
-    const [status, setStatus] = useState("todo");
 
-    const handleSubmit = e => {
+    const handleSubmit = (e: React.SubmitEvent<HTMLElement>) => {
         e.preventDefault();
 
         if (!title.trim()) return;
 
-        addTask(title, status);
+        addTask(title);
 
         setTitle("");
-        setStatus("todo");
     };
     
     return (

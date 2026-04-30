@@ -1,4 +1,6 @@
-export const filterTasks = (tasks, query, statusFilter) => {
+import type { Task } from "../types/Task";
+
+export const filterTasks = (tasks: Task[], query: string, statusFilter: string) => {
   return tasks.filter(task => {
     const matchSearch =
       task.title

@@ -1,5 +1,9 @@
 
-export default function FilterBar({setStatusFilter}){
+interface FilterBarProps {
+  setStatusFilter: (status: string) => void;
+}
+
+export default function FilterBar({setStatusFilter}: FilterBarProps ){
     return(
         <select className="flex justify-baseline p-6"
             onChange={e => setStatusFilter(e.target.value)}>

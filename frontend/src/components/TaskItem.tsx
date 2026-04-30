@@ -1,5 +1,6 @@
+import type { TaskItemProps } from "../types/TaskItemProps";
 
-export default function TaskItem({task, deleteTask, updateStatus}){
+export default function TaskItem({task, deleteTask, updateTask}: TaskItemProps){
     return (
         <div className="grid grid-cols-[2fr_1fr_auto] items-center w-full gap-2">
             {
@@ -9,7 +10,7 @@ export default function TaskItem({task, deleteTask, updateStatus}){
 
             }
 
-            <select className="border px-4  py-1 rounded" value={task.status} onChange={e => updateStatus(task.id, e.target.value)}>
+            <select className="border px-4  py-1 rounded" value={task.status} onChange={e => updateTask(task.id, e.target.value)}>
                 <option value="todo">Todo</option>
                 <option value="in-progress"  >In-progess</option>
                 <option value="done">Done</option>
