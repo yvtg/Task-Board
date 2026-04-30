@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # POSTGRESQL - Database Service
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: task-board-postgres
+    
+    # Authentication
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      POSTGRES_DB: task_board
+    
+    # Port mapping
+    ports:
+      - "5432:5432"
+    
+    # Data persistence
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    
+    # Networking
+    networks:
+      - task-board-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_board"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # BACKEND - Node.js Express API
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-board-backend
+    
+    # Environment variables
+    environment:
+      # Database connection
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-1234}@postgres:5432/task_board
+      
+      # Node environment
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
+    
+    # Port mapping
+    ports:
+      - "3001:3001"
+    
+    # Depends on PostgreSQL 
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    # Networking
+    networks:
+      - task-board-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Health check 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # FRONTEND - React + Nginx
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task-board-frontend
+    
+    # Environment variables
+    environment:
+      # React App Configuration
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3001}
+    
+    # Port mapping
+    ports:
+      - "80:80"
+    
+    # Depends on Backend
+    depends_on:
+      - backend
+    
+    # Networking
+    networks:
+      - task-board-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+# ============================================
+# VOLUMES - Data Persistence
+# ============================================
+volumes:
+  postgres-data:
+    driver: local
+    # Optional: Configure volume driver options for AWS, etc.
+    # driver_opts:
+    #   type: tmpfs
+    #   device: tmpfs
+    #   o: size=512m
+
+# ============================================
+# NETWORKS - Service Communication
+# ============================================
+networks:
+  task-board-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
